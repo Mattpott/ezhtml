@@ -1,6 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { EZTag } from './eztag_types';
 
 // file for defining the overarching content of an eztag object
 // separate from the typical utils defined on it
@@ -18,27 +18,13 @@ import * as vscode from 'vscode';
 // the s flag makes it so the tag can extend over multiple lines as the '.' captures newlines
 export const OPEN_TAG_REGEX: RegExp = /(<([^\/!].*?)>)/s;
 
-/*
- * 
- * 
- * 
- */
-export class EZTag {
-    openingTagRange: vscode.Range;
-    closingTagRange: vscode.Range;
-    #activeEditor: vscode.TextEditor; // '#' denotes private I believe
-    
-	constructor(openingTagRange: vscode.Range, closingTagRange: vscode.Range,
-                activeEditor: vscode.TextEditor) {
-		this.openingTagRange = openingTagRange;
-        this.closingTagRange = closingTagRange;
-        this.#activeEditor = activeEditor;
-	}
+let tagMap: Map<string, EZTag> = new Map<string, EZTag>(); // temporary
 
-    get contentText(): String {
-        const contentStart = this.openingTagRange.end;
-        const contentEnd = this.closingTagRange.start;
-        const doc = this.#activeEditor.document;
-        return doc.getText(new vscode.Range(contentStart, contentEnd)).trim();
-    }
+// temporary placement for the sake of parser things. 
+export function getCustomTagMap(): Map<string, EZTag> {
+    return tagMap;
+}
+
+export function setCustomTagMap(map: Map<string, EZTag>): void {
+    tagMap = map;
 }

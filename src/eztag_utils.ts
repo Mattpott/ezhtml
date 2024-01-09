@@ -2,11 +2,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as eztag from './eztag';
+import * as html from 'vscode-html-languageservice';
 
 // denotes the max number of lines to search in one pass when looking for tags
-const SEARCH_LINE_MAX = 100;
+const SEARCH_LINE_MAX = 256;
 
-/* 
+/**
  * Retrieves the Range of the nearest tag before the passed position.
  * 
  * If the position to search from is within an opening tag or directly next
@@ -22,12 +23,14 @@ const SEARCH_LINE_MAX = 100;
  *         the intended Position using the RegEx defined in eztag.ts,
  *         or NULL if none was found
  */
-export function getPreviousTagOpening(curPos: vscode.Position): vscode.Range | null {
-    const editor = vscode.window.activeTextEditor;
+export function getPreviousTagOpening(editor: vscode.TextEditor, curPos: vscode.Position): vscode.Range | null {
     if (!editor || !curPos) { 
         return null; 
     }
     const doc = editor.document;
+    // let sd: html.HTMLDocument;
+    // sd.findNodeBefore(doc.offsetAt()) possible solution if I can gain access to main native HTMLDocument
+
     // make the opening tag regular expression global
     const GLOBAL_REGEX = new RegExp(eztag.OPEN_TAG_REGEX, "g");
     // check for an opening tag on the position's line preceding the position
@@ -88,7 +91,7 @@ export function getPreviousTagOpening(curPos: vscode.Position): vscode.Range | n
     }
 }
 
-/* 
+/**
  * Retrieves the Range of the nearest tag after the passed position.
  * 
  * If the position to search from is within an opening tag, the tag after
@@ -101,12 +104,25 @@ export function getPreviousTagOpening(curPos: vscode.Position): vscode.Range | n
  *         the intended Position using the RegEx defined in eztag.ts,
  *         or NULL if none was found
  */
-export function getNextTagOpening(curPos: vscode.Position): vscode.Range | null {
-    const editor = vscode.window.activeTextEditor;
+export function getNextTagOpening(editor: vscode.TextEditor, curPos: vscode.Position): vscode.Range | null {
     if (!editor || !curPos) { 
         return null; 
     }
-    const doc = editor.document;
+    // setup for parsing for tags
+    const doc: vscode.TextDocument = editor.document;
+    const service: html.LanguageService = html.getLanguageService();
+    let atEnd: boolean = false;
+    // scan SEARCH_LINE_MAX lines at a time for an opening tag after curPos
+    while (!atEnd) {
+        let endLine: number = curPos.line + SEARCH_LINE_MAX;
+        if (curPos.line >= doc.lineCount) {
+            endLine = doc.lineCount - 1;
+        }
+        const endPos: vscode.Position = doc.lineAt(endLine).range.end;
+        let scan: html.Scanner = service.createScanner(doc.getText(new vscode.Range(curPos, endPos)));
+        scan.scan();
+    }
+
     // check for an opening tag on the position's line after the position
     let postText = doc.getText(new vscode.Range(curPos, doc.lineAt(curPos.line).range.end));
     let match = postText.match(eztag.OPEN_TAG_REGEX);
@@ -196,4 +212,54 @@ function previousPosition(position: vscode.Position, document: vscode.TextDocume
         }
         return document.lineAt(prevLineNum).range.end;
     }
+}
+
+// JSON DATA STORAGE
+
+// https://code.visualstudio.com/api/extension-guides/virtual-documents
+// https://code.visualstudio.com/api/references/vscode-api#FileSystemProvider
+// On startup load up the saved custom tags JSON containing a map of EZTags
+// The keys for the map should be the EZTag's tag name
+
+// ACTUALLY EXPANDING THE TAG (Ideological)
+
+function getOpeningTag(editor: vscode.TextEditor, pos: vscode.Position): vscode.Selection {
+    let tag: vscode.Selection = editor.selection; // temporary
+
+    return tag;
+}
+
+
+function expandCurTag(editor: vscode.TextEditor) {
+    if (!editor) {
+        return;
+    }
+    // First, the tag's breadth should be determined
+    // Search backward to determine the opening of the current tag
+    const doc: vscode.TextDocument = editor.document;
+    const opening: String = doc.getText(getOpeningTag(editor, editor.selection.active));
+    
+    // Once the beginning of the tag is found, extract its tag name
+    let tagName = opening.slice(1, -1).split(" ")[0];
+    
+    // Check the tag against those stored in the map made from loading the JSON
+    // Ensure the tag is indeed a custom one
+    // If the tag isn't a void one, search forward to find the nearest closure 
+        // of the tag's type
+    // Ensure there is a closing tag
+    // Create a Selection that covers from start of opening tag to end of closing tag
+// Next, get the new text to replace the whole Selection with
+    // Scrape the tag's metadata and store them in Strings
+    // Get the Selection denoting the tag's content
+    // Pass that Selection's String content to the JSON stored function
+        // https://javascript.info/eval
+    // Once the String is evaluted into new contentm that new String should be
+        // split depending on each delimiter associated with the custom tag,
+        // ensuring that each String stays associated for later use.
+        // Once fully split up, place those Strings in their intended locations
+        // in the expanded tag's stored String.
+    // TODO figure out how to associate metadata then add it to the expanded tag
+// Finally, replace the Selection with that expanded tag String
+    // This is probably easy, just use the API
+
 }
