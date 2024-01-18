@@ -10,58 +10,25 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:ezhtml.helloWorld"
+    "onLanguage:markdown"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "ezhtml.insideNextTag",
-        "title": "Move Inside Next Tag",
+        "command": "ezhtml.getTagRange",
+        "title": "Get Tag Range at Cursor",
         "when": "editorLangId == markdown"
       },
       {
-        "command": "ezhtml.insidePrevTag",
-        "title": "Move Inside Previous Tag",
-        "when": "editorLangId == markdown"
-      },
-      {
-        "command": "ezhtml.showtreeview",
-        "title": "Show Tree View",
+        "command": "ezhtml.execute",
+        "title": "Run Test Function Thingy",
         "when": "editorLangId == markdown"
       }
     ],
     "keybindings": [
-      {
-        "command": "ezhtml.insideNextTag",
-        "key": "ctrl+alt+.",
-        "mac": "ctrl+cmd+."
-      },
-      {
-        "command": "ezhtml.insidePrevTag",
-        "key": "ctrl+alt+,",
-        "mac": "ctrl+cmd+,"
-      }
-    ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "tree-view",
-          "title": "Tree View",
-          "icon": "./BOCCHI ARC.png"
-        }
-      ]
-    },
-    "views": {
-      "tree-view": [
-        {
-          "id": "tree-view",
-          "name": "Tree View",
-          "icon": "./BOCCHI ARC.png",
-          "contextualTitle": "Tree View"
-        }
-      ]
-    }
+
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -86,6 +53,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "vscode-html-languageservice": "^5.1.1"
+    "vscode-html-languageservice": "^5.1.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
   }
 }

@@ -1,8 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { getPreviousTagOpening, getNextTagOpening } from './eztag_utils';
-import { ForwardParser } from './html_parser/eztag_parser';
+import { getCustomTagMap } from './eztag';
+import { EZTag } from './eztag_types';
+import { getOpeningTag } from './eztagService';
+import { executeCustomFunction } from './eztagService';
 
 // /*
 //  * Gets the offset of the inside of the desired opening tag relative to the
@@ -22,47 +24,68 @@ import { ForwardParser } from './html_parser/eztag_parser';
 // 	}
 // }
 
-function moveInsidePrevTag() {
+// function moveInsidePrevTag() {
+// 	const editor = vscode.window.activeTextEditor;
+// 	if (!editor) {
+// 		return;
+// 	}
+// 	const pos = editor.selection.active;
+// 	const tagRange = getPreviousTagOpening(editor, pos);
+// 	if (tagRange) {
+// 		editor.selection = new vscode.Selection(tagRange.end, tagRange.end);
+// 	}
+// }
+
+// function moveInsideNextTag() {
+// 	const editor = vscode.window.activeTextEditor;
+// 	if (!editor) {
+// 		return;
+// 	}
+// 	const pos = editor.selection.active;
+// 	const tagRange = getNextTagOpening(editor, pos);
+// 	if (tagRange) {
+// 		editor.selection = new vscode.Selection(tagRange.end, tagRange.end);
+// 	}
+// }
+
+function getTagRange() {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		return;
 	}
 	const pos = editor.selection.active;
-	const tagRange = getPreviousTagOpening(editor, pos);
-	if (tagRange) {
-		editor.selection = new vscode.Selection(tagRange.end, tagRange.end);
+	const node = getOpeningTag(editor, pos);
+	const startTagStart = editor.document.positionAt(node.start);
+	if (node.startTagEnd) {
+		const startTagEnd = editor.document.positionAt(node.startTagEnd);
+		editor.selection = new vscode.Selection(startTagStart, startTagEnd);
+	}
+	else {
+		const endTagEnd = editor.document.positionAt(node.end);
+		editor.selection = new vscode.Selection(startTagStart, endTagEnd);
 	}
 }
 
-function moveInsideNextTag() {
-	const editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		return;
-	}
-	const pos = editor.selection.active;
-	const tagRange = getNextTagOpening(editor, pos);
-	if (tagRange) {
-		editor.selection = new vscode.Selection(tagRange.end, tagRange.end);
+async function executeThing() {
+	let returned: string | undefined;
+	// returned = await executeCustomFunction('C:/Users/mapot/Desktop/modules/commonjsTest.js');
+	returned = await executeCustomFunction('C:/Users/mapot/Desktop/modules/ecmascriptjsTest.mjs');
+	// returned = await executeCustomFunction("function poop(teehee) { return 'poop';} function callme(teehee) { return `${teehee} and also ${poop(teehee)}`;}");
+	// returned = await executeCustomFunction('balls');
+	if (returned) {
+		vscode.window.showInformationMessage(returned);
 	}
 }
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insidePrevTag', moveInsidePrevTag));
-	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insideNextTag', moveInsideNextTag));
-	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.showtreeview', () => {
-		const editor = vscode.window.activeTextEditor;
-		if (!editor) {
-			return;
-		}
-		const parser = new ForwardParser(editor.document.getText());
-		const tree = parser.parse();
-		// vscode.window.createTreeView('tree-view', {
-		// 	treeDataProvider: tree
-		//   }).reveal(tree.getRoot());
-		vscode.window.registerTreeDataProvider("tree-view", tree);
-	}));
+	// context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insidePrevTag', moveInsidePrevTag));
+	// context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insideNextTag', moveInsideNextTag));
+	const tagMap = getCustomTagMap();
+	tagMap.set('poop', new EZTag('poop', '', true));
+	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.getTagRange', getTagRange));
+	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.execute', executeThing));
 }
 
 // This method is called when your extension is deactivated
