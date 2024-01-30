@@ -71,14 +71,20 @@ import { HTMLDataV1, IAttributeData, IHTMLDataProvider, ITagData, IValueData } f
 // TypeScript extensions working?
 export class EZTag implements ITagData {
     public name: string;
-    public attributes: IAttributeData[] = [];
+    public attributes: IAttributeData[];
     public void?: boolean | undefined;
-    private func: string;
+    private _expansionList: ExpansionTagNode[];
+    private _delimiters: string[];
+    private _func: string;
 
-    public constructor(name: string, func: string, voidness: boolean = false) {
+    public constructor(name: string, voidness: boolean = false, expansionList: ExpansionTagNode[],
+                       delimiters: string[], func: string) {
         this.name = name;
+        this.attributes = [];
         this.void = voidness;
-        this.func = func;
+        this._expansionList = expansionList;
+        this._delimiters = delimiters;
+        this._func = func;
     }
 
     public get tagName() {
@@ -89,8 +95,77 @@ export class EZTag implements ITagData {
         return this.void;
     }
 
+    public get expansionList() {
+        return this._expansionList;
+    }
+
+    public get delimiters() {
+        return this._delimiters;
+    }
+
     public get functionString() {
-        return this.func;
+        return this._func;
+    }
+}
+
+/**
+ * Essentially just a stripped-down version of vscode's html-languageservice's
+ * Node class to not include the unnecessary positional fields.
+ * @see vscode-html-languageservice.Node
+ */
+class ExpansionTagNode {
+    private _name: string;
+    private _children: ExpansionTagNode[];
+    private _parent?: ExpansionTagNode;
+    private _attributes?: {
+        [name: string]: string | null;
+    } | undefined;
+
+    public constructor(name: string, children: ExpansionTagNode[] = [], parent?: ExpansionTagNode,
+                       attributes?: { [name: string]: string | null; }) {
+        this._name = name;
+        this._children = children;
+        this._parent = parent;
+        this._attributes = attributes;
+    }
+    
+    public get name(): string {
+        return this._name;
+    }
+    
+    public get children(): ExpansionTagNode[] {
+        return this._children;
+    }
+
+    public get parent(): ExpansionTagNode | undefined {
+        return this._parent;
+    }
+
+    public get attributes(): { [name: string]: string | null; } | undefined {
+        return this._attributes;
+    }
+
+    /**
+     * Constructs the opening tag for the Node by adding its existing
+     * attributes to the tag as expected, with attributes ordered according
+     * to thee original Node's attribute order.
+     * 
+     * @returns the string representation of the opening tag of this node
+     */
+    public toString(): string {
+        if (!this._attributes) {
+            return `<${this._name}>`;
+        }
+        let tag: string = `<${this._name}`;
+        for (const [key, value] of Object.entries(this._attributes)) {
+            if (value === null) {
+                tag += ` ${key}=`;
+            } else {
+                tag += ` ${key}="${value}"`;
+            }
+        }
+        tag += '>';
+        return tag;
     }
 }
 

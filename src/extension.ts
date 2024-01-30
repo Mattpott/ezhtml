@@ -69,12 +69,16 @@ function getTagRange() {
 async function executeThing() {
 	let returned: string | undefined;
 	// returned = await executeCustomFunction('C:/Users/mapot/Desktop/modules/commonjsTest.js');
-	returned = await executeCustomFunction('C:/Users/mapot/Desktop/modules/ecmascriptjsTest.mjs');
+	// returned = await executeCustomFunction('C:/Users/mapot/Desktop/modules/ecmascriptjsTest.mjs');
 	// returned = await executeCustomFunction("function poop(teehee) { return 'poop';} function callme(teehee) { return `${teehee} and also ${poop(teehee)}`;}");
 	// returned = await executeCustomFunction('balls');
 	if (returned) {
 		vscode.window.showInformationMessage(returned);
 	}
+	const pernis = 'there once was a man from nantucket. he was a man';
+	const reg = /man/g;
+	const poggers = reg.exec(pernis);
+	const pog2 = reg.exec(pernis);
 }
 
 // This method is called when your extension is activated
@@ -82,8 +86,6 @@ async function executeThing() {
 export function activate(context: vscode.ExtensionContext) {
 	// context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insidePrevTag', moveInsidePrevTag));
 	// context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.insideNextTag', moveInsideNextTag));
-	const tagMap = getCustomTagMap();
-	tagMap.set('poop', new EZTag('poop', '', true));
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.getTagRange', getTagRange));
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('ezhtml.execute', executeThing));
 }

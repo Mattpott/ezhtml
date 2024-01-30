@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as eztag from './eztag';
 import * as html from 'vscode-html-languageservice';
-import { CustomTagData } from './eztag_types';
+import { CustomTagData, EZTag } from './eztag_types';
 import { existsSync } from 'fs';
 // import { getECMAScriptEntryFunction } from './importer/dynamicImporter';
 
@@ -18,6 +18,59 @@ function previousPosition(position: vscode.Position, document: vscode.TextDocume
             prevLineNum = 0;
         }
         return document.lineAt(prevLineNum).range.end;
+    }
+}
+
+
+/**
+ * When creating the EZTag, the given HTML should be parsed by vscode's
+ * parser and those nodes should be added to the expansionList with some
+ * data removed (the indices for example).
+ */
+export function expandTag(content: string, tag: EZTag) {
+    // TODO: make it so that having the double spaced delimiter works
+    // TODO: make it so that void tags work
+    // TODO: make it so that attribute data is added when adding expanded opening tag (make tostring for ExpansionTagNode)
+    // TODO: ensure having only 1 tag to expand still works
+    // TODO: ensure last tag in the bunch still closes and the content is appended (after while loop maybe)
+
+    // TODO: allow for tags with no content by having null delimiters for those tags.
+    //       this should be checked for when a new delimiter/end of delimiters is encountered.
+    //       when this happens, add the opening tag and its associated closing tag as should occur
+    //       depending on voidness and whether it is a block-level tag or not.
+    const expansionList = tag.expansionList;
+    const openingTags = expansionList.map((node) => node.toString());
+    const delimiters: string[] = tag.delimiters;
+    let level = -1; // keeps track of how many expanded tags deep we are
+    let expandedText: string = '';
+    // union the delimiters into one global regex
+    const regex = new RegExp(delimiters.join('|'), 'g');
+    let match: RegExpExecArray | null = null;
+    let curContentStart: number = -1;
+    let curContentEnd: number = -1;
+    while ((match = regex.exec(content)) !== null) {
+        const delimiter: string = match[0];
+        // determine how many tags deep we are by comparing the current level
+        // of delimiter to that level in the delimiters list
+        const newLevel = delimiters.findIndex((val: string) => val === delimiter);
+        curContentEnd = match.index;
+        if (newLevel > level) { // open new level of expanded tag
+            if (expandedText.length !== 0) { // TODO: only do this if associated tag is a block-level tag if possible
+                expandedText += '\n';
+            }
+            expandedText += `${expansionList[newLevel]}\n`; // TODO: requires tostring
+        }
+        // add content to current expanded tag
+        if (curContentStart !== -1) {
+            expandedText += content.slice(curContentStart, curContentEnd);
+        }
+        if (newLevel < level) { // close previous level of expanded tag
+            const tagName = expansionList[level].name;
+            // TODO: only do this if associated tag is not void
+            expandedText += `\n</${tagName}>\n`;
+        }
+        curContentStart = match.index + delimiter.length;
+        level = newLevel;
     }
 }
 
